@@ -1,0 +1,92 @@
+function createTableHeader(tableId){
+    var tableHeaderRow = document.createElement('TR');
+    var th1 = document.createElement('TH');
+    var th2 = document.createElement('TH');
+    var th3 = document.createElement('TH');
+    var th4 = document.createElement('TH');
+    th1.appendChild(document.createTextNode("BookId"));
+    th2.appendChild(document.createTextNode("Type"));
+    th3.appendChild(document.createTextNode("Price"));
+    th4.appendChild(document.createTextNode("Examine"));
+    tableHeaderRow.appendChild(th1);
+    tableHeaderRow.appendChild(th2);
+    tableHeaderRow.appendChild(th3);
+    tableHeaderRow.appendChild(th4);
+    document.getElementById(tableId).appendChild(tableHeaderRow);
+}
+
+function updateTable(tableId,bookArray){
+    var tableBody = document.getElementById(tableId);
+    //reset table
+    while (tableBody.hasChildNodes()) {
+        tableBody.removeChild(tableBody.firstChild);
+    }
+    //create table header
+    createTableHeader(tableId);
+    //populate table rows
+    for (var i = 0; i < bookArray.length; i++) {
+        var tr = document.createElement('TR');
+        var td1 = document.createElement('TD');
+        var td2 = document.createElement('TD');
+        var td3 = document.createElement('TD');
+        var td4 = document.createElement('button');
+
+        td4.addEventListener('click',function(){
+
+        });
+        td1.appendChild(document.createTextNode(bookArray[i].id));
+        td2.appendChild(document.createTextNode(bookArray[i].type));
+        td3.appendChild(document.createTextNode(bookArray[i].price));
+        td4.appendChild(document.createTextNode("Examine"));
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tr.appendChild(td4);
+        tableBody.appendChild(tr);
+    }
+
+    processSearch(this.parentNode.firstChild.innerHTML);
+}
+
+api.searchAllBooks().then(function(value){
+    updateTable('allTable',value);
+});
+
+function updateExaminedText(book){
+    var outputString = "Book Id: " + book.id;
+    outputString += "<br> Price: " + book.price;
+    outputString += "<br> Type: " + book.type;
+    document.getElementById("bookText").innerHTML = outputString;
+}
+
+function getIntersection(arrA,arrB,searchedId){
+
+    var samePrice = arrA;
+    var sameType = arrB;
+    var similarArray = [];
+    samePrice.forEach(function(obj1){
+        sameType.forEach(function(obj2){
+            if(obj1.id == obj2.id && obj1.id != searchedId)
+                similarArray.push(obj1);
+        });
+    });
+
+    return similarArray;
+
+}
+
+function processSearch(searchId){
+    api.searchBookById(searchId).then(function(val){
+        return Promise.all([api.searchBooksByPrice(val.price,5),api.searchBooksByType(val.type),val]);
+    }).then(function(val){
+        var similarArray = getIntersection(val[0],val[1],val[2].id);
+        updateExaminedText(val[2]);
+        updateTable('similarTable',similarArray);
+    }).catch(function(val){
+        alert(val);
+    });
+}
+
+document.getElementById("inputButton").addEventListener('click',function(){
+    processSearch(document.getElementById('input').value);
+});
